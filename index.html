@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parlament Tag Manager</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>🏛️ Parlament Tag Manager</h1>
+        <p class="subtitle">YouTube-Tags schneller zusammenstellen</p>
+      </header>
+
+      <section id="authCard" class="card auth-card">
+        <div id="loggedOutState">
+          <p>Du bist aktuell nicht eingeloggt.</p>
+          <button id="loginBtn" class="btn btn-primary">Mit Google anmelden</button>
+        </div>
+        <div id="loggedInState" class="hidden">
+          <div class="user-row">
+            <div>
+              <p id="userName" class="user-name">Eingeloggt</p>
+              <p id="userEmail" class="user-email"></p>
+            </div>
+            <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="statusArea" class="status-area"></section>
+
+      <main id="mainApp" class="hidden">
+        <section class="card">
+          <div class="row wrap">
+            <label for="tagSetSelect">Tag-Set laden:</label>
+            <select id="tagSetSelect"></select>
+            <button id="loadSetBtn" class="btn btn-secondary">Laden</button>
+            <button id="manageSetsBtn" class="btn btn-ghost">Sets verwalten</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="search-wrap">
+            <label for="tagSearchInput">🔍 Tag suchen oder neu eingeben</label>
+            <input id="tagSearchInput" type="text" autocomplete="off" placeholder="z.B. Klimaschutz" />
+            <ul id="autocompleteList" class="autocomplete-list hidden"></ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="row between wrap">
+            <h2>Ausgewählte Tags (<span id="selectedCount">0</span>)</h2>
+            <button id="clearSelectionBtn" class="btn btn-ghost">Nicht-fixe Tags entfernen</button>
+          </div>
+          <div id="selectedChips" class="chips"></div>
+        </section>
+
+        <section class="card">
+          <div class="row wrap actions">
+            <button id="saveSetBtn" class="btn btn-secondary">Als Tag-Set speichern</button>
+            <button id="copyTagsBtn" class="btn btn-primary">📋 Tags kopieren</button>
+            <button id="manageTagsBtn" class="btn btn-ghost">Tag-Verwaltung</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="tagManagerModal" class="modal">
+      <form method="dialog" class="modal-card">
+        <div class="row between">
+          <h2>Tag-Verwaltung</h2>
+          <button class="btn btn-ghost" value="close">Schließen</button>
+        </div>
+
+        <div class="row wrap">
+          <label for="tagFilterCategory">Kategorie:</label>
+          <select id="tagFilterCategory">
+            <option value="all">Alle</option>
+            <option value="fixed">fixed</option>
+            <option value="format">format</option>
+            <option value="content">content</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th>Kategorie</th>
+                <th>Verwendung</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="tagTableBody"></tbody>
+          </table>
+        </div>
+
+        <fieldset class="add-tag-box">
+          <legend>Neuen Tag hinzufügen</legend>
+          <div class="row wrap">
+            <input id="newTagInput" type="text" placeholder="Neuer Tag" />
+            <select id="newTagCategory">
+              <option value="content">content</option>
+              <option value="format">format</option>
+              <option value="fixed">fixed</option>
+            </select>
+            <button id="addTagBtn" type="button" class="btn btn-primary">Speichern</button>
+          </div>
+          <p id="addTagHint" class="hint"></p>
+        </fieldset>
+
+        <a id="sheetLink" class="sheet-link" target="_blank" rel="noopener noreferrer">Google Sheet öffnen</a>
+      </form>
+    </dialog>
+
+    <dialog id="setManagerModal" class="modal">
+      <form method="dialog" class="modal-card">
+        <div class="row between">
+          <h2>Tag-Sets verwalten</h2>
+          <button class="btn btn-ghost" value="close">Schließen</button>
+        </div>
+        <div id="setList" class="set-list"></div>
+      </form>
+    </dialog>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
