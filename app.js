@@ -1087,7 +1087,3 @@
 
   bootstrap();
 })();
-    if (!TOKEN_PROXY_URL || TOKEN_PROXY_URL.includes('YOUR-WORKER-SUBDOMAIN')) {
-      showStatus('Bitte trage TOKEN_PROXY_URL in config.js ein.', 'error', 9000);
-      return;
-    }
