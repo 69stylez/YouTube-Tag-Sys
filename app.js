@@ -4,7 +4,6 @@
   const AUTH_STORAGE_KEY = 'ytm_auth';
   const PKCE_VERIFIER_KEY = 'ytm_pkce_verifier';
   const OAUTH_STATE_KEY = 'ytm_oauth_state';
-  const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
   const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 
   const state = {
@@ -136,6 +135,10 @@
       showStatus('Bitte trage zuerst CLIENT_ID in config.js ein.', 'error', 9000);
       return;
     }
+    if (!TOKEN_PROXY_URL || TOKEN_PROXY_URL.includes('YOUR-WORKER-SUBDOMAIN')) {
+      showStatus('Bitte trage zuerst TOKEN_PROXY_URL in config.js ein.', 'error', 9000);
+      return;
+    }
 
     const verifier = randomString(64);
     const challenge = await sha256Base64Url(verifier);
@@ -152,7 +155,6 @@
       code_challenge: challenge,
       code_challenge_method: 'S256',
       state: authState,
-      access_type: 'offline',
       include_granted_scopes: 'true'
     });
 
@@ -163,21 +165,23 @@
     const verifier = sessionStorage.getItem(PKCE_VERIFIER_KEY);
     if (!verifier) throw new Error('PKCE-Code-Verifier fehlt. Bitte Login erneut starten.');
 
-    const payload = new URLSearchParams({
-      client_id: CLIENT_ID,
-      code,
-      code_verifier: verifier,
-      grant_type: 'authorization_code',
-      redirect_uri: getRedirectUri()
-    });
+    let response;
+    try {
+      response = await fetch(TOKEN_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          code,
+          code_verifier: verifier,
+          redirect_uri: getRedirectUri()
+        })
+      });
+    } catch (_) {
+      throw new Error('Token-Proxy nicht erreichbar. Bitte Netzwerk/Worker prüfen.');
+    }
 
-    const response = await fetch(TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: payload.toString()
-    });
-
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(result.error_description || result.error || 'Token-Austausch fehlgeschlagen');
     }
@@ -185,40 +189,11 @@
     const now = Date.now();
     return {
       accessToken: result.access_token,
-      refreshToken: result.refresh_token || null,
+      refreshToken: null,
       idToken: result.id_token || null,
       expiresAt: now + (Number(result.expires_in || 3600) * 1000),
       scope: result.scope || OAUTH_SCOPES.join(' ')
     };
-  }
-
-  async function refreshAccessToken() {
-    if (!state.auth || !state.auth.refreshToken) {
-      throw new Error('Session ist abgelaufen. Bitte erneut einloggen.');
-    }
-
-    const payload = new URLSearchParams({
-      client_id: CLIENT_ID,
-      refresh_token: state.auth.refreshToken,
-      grant_type: 'refresh_token'
-    });
-
-    const response = await fetch(TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: payload.toString()
-    });
-
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error_description || 'Token-Refresh fehlgeschlagen. Bitte neu anmelden.');
-    }
-
-    saveAuth({
-      ...state.auth,
-      accessToken: result.access_token,
-      expiresAt: Date.now() + (Number(result.expires_in || 3600) * 1000)
-    });
   }
 
   async function ensureValidToken() {
@@ -226,11 +201,7 @@
       throw new Error('Nicht eingeloggt.');
     }
     if (Date.now() < state.auth.expiresAt - 60000) return;
-    if (!state.auth.refreshToken) {
-      throw new Error('Session abgelaufen. Bitte erneut einloggen.');
-    }
-    await refreshAccessToken();
-    showStatus('Session wurde automatisch aktualisiert.', 'info');
+    throw new Error('Session abgelaufen. Bitte erneut einloggen.');
   }
 
   async function handleAuthCallback() {
@@ -1116,3 +1087,7 @@
 
   bootstrap();
 })();
+    if (!TOKEN_PROXY_URL || TOKEN_PROXY_URL.includes('YOUR-WORKER-SUBDOMAIN')) {
+      showStatus('Bitte trage TOKEN_PROXY_URL in config.js ein.', 'error', 9000);
+      return;
+    }
